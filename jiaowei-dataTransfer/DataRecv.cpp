@@ -22,11 +22,11 @@ using namespace std;
 int GetOneMessage(SOCKET s, char* output, short* output_len);
 int DissectOneMessage(char* message);
 int DissectPositionInfo(char* Info, short len);
-
 FILE* createNewFile();
-
  FILE* pid, *plog;
  char* getCurrentTime();
+ static SOCKET clientsock;
+ static sockaddr_in addr;
 
 void main()
 {
@@ -53,7 +53,7 @@ void main()
 	else printf("WSA start succesffull !\n");
 	protoent *ppe;
 	ppe = getprotobyname("tcp");
-	SOCKET clientsock = socket(PF_INET, SOCK_STREAM, ppe->p_proto);
+	clientsock = socket(PF_INET, SOCK_STREAM, ppe->p_proto);
 	if(clientsock==INVALID_SOCKET)
 	{
 		printf("INVALID SOCKET !\n");
@@ -62,10 +62,10 @@ void main()
 		return ;
 	}
 	else printf("soclet start succesffull !\n");
-	sockaddr_in addr = {0};
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(SERVER_PORT);
-	addr.sin_addr.s_addr=inet_addr(SERVER_IP);
+	 sockaddr_in addr = {0};
+	 addr.sin_family = AF_INET;
+	 addr.sin_port = htons(SERVER_PORT);
+	 addr.sin_addr.s_addr=inet_addr(SERVER_IP);
 
 
 	u_long iMode = 0;
@@ -79,6 +79,7 @@ void main()
 		return;
 	}
 	else printf("ioctl initial succesffull !\n");
+
 	err = connect(clientsock, (sockaddr*)&addr, sizeof(addr));
 	if(err==SOCKET_ERROR)
 	{
@@ -209,6 +210,26 @@ int DissectOneMessage(char* message)
 		printf("  \n@@ 解析消息错误 @@ \n ");
 		fprintf(plog,"%s :  @@ 解析消息错误 @@ type=%s \n",getCurrentTime(),*type);
 		Sleep(1000);
+
+		protoent *ppe;
+		ppe = getprotobyname("tcp");
+		clientsock = socket(PF_INET, SOCK_STREAM, ppe->p_proto);
+
+		 sockaddr_in addr = {0};
+		 addr.sin_family = AF_INET;
+		 addr.sin_port = htons(SERVER_PORT);
+		 addr.sin_addr.s_addr=inet_addr(SERVER_IP);
+
+		int err = connect(clientsock, (sockaddr*)&addr, sizeof(addr));
+		if(err==SOCKET_ERROR)
+		{
+			printf("---------------连接失败-------------------\n");
+			fprintf(plog,"%s : ---------------连接失败-------------------\n",getCurrentTime());
+			Sleep(500);
+			return -1;
+		}
+		else printf("#------------重新连接连接成功---------------- !\n");
+
 		break;
 	}
 	return 0;
